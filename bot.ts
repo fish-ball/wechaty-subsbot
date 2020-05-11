@@ -1,4 +1,4 @@
-import {Contact, UrlLink, Wechaty} from 'wechaty';
+import {Contact, Friendship, UrlLink, Wechaty} from 'wechaty';
 import {MessageType, ScanStatus} from 'wechaty-puppet';
 import {PuppetPadplus} from 'wechaty-puppet-padplus';
 import QrcodeTerminal from 'qrcode-terminal';
@@ -78,6 +78,11 @@ bot.on('scan', (qrcode, status) => {
   setTimeout(async () => {
     await SubscriptionRunner.check();
   }, 60000);
+}).on('friendship', async friendship => {
+  if (friendship.type() === Friendship.Type.Confirm) {
+    await friendship.accept();
+    await friendship.contact().say('欢迎使用订阅机器人，将 Bilibili UP 主页面分享过来就可以自动订阅哦，赶快试试吧！');
+  }
 }).start();
 
 class UserContext {
