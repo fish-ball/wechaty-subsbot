@@ -55,5 +55,5 @@ ts-node bot.ts
 
 测试机器人(wx_easecloud)：
 
-[![Wechaty开源激励计划](wx_easecloud.jpg)]
+[![逸云科技](https://github.com/fish-ball/wechaty-subsbot/raw/master/wx_easecloud.jpg)]
 
