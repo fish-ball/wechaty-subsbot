@@ -1,0 +1,27 @@
+{
+  "name": "wechaty-subsbot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/easecloud/wechaty-subsbot.git",
+  "author": "fish-ball",
+  "license": "MIT",
+  "scripts": {
+    "main": "ts-node index.ts"
+  },
+  "dependencies": {
+    "firebase": "7.14.2",
+    "grpc": "^1.24.2",
+    "node-fetch": "^2.6.0",
+    "node-pre-gyp": "^0.14.0",
+    "qrcode-terminal": "^0.12.0",
+    "request": "^2.88.2",
+    "ts-node": "^8.10.1",
+    "typescript": "^3.8.3",
+    "wechaty": "^0.38.4",
+    "wechaty-puppet": "^0.24.0",
+    "wechaty-puppet-padplus": "^0.6.3"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.5.7"
+  }
+}

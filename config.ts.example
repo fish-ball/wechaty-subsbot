@@ -1,0 +1,4 @@
+export default {
+  name: 'subsbot',
+  token: '<<你的TOKEN，暂时仅支持 padplus>>',
+};
