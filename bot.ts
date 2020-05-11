@@ -79,9 +79,9 @@ bot.on('scan', (qrcode, status) => {
     await SubscriptionRunner.check();
   }, 60000);
 }).on('friendship', async friendship => {
-  if (friendship.type() === Friendship.Type.Confirm) {
+  if (friendship.type() === Friendship.Type.Receive) {
     await friendship.accept();
-    await friendship.contact().say('欢迎使用订阅机器人，将 Bilibili UP 主页面分享过来就可以自动订阅哦，赶快试试吧！');
+    await friendship.contact().say('欢迎使用订阅机器人，将B站up主的页面分享过来就可以自动订阅哦，赶快试试吧！');
   }
 }).start();
 
