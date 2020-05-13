@@ -75,7 +75,7 @@ bot.on('scan', (qrcode, status) => {
   await ctx.save();
 }).on('login', async () => {
   // 每分钟查一下有没有新片发布
-  setTimeout(async () => {
+  setInterval(async () => {
     await SubscriptionRunner.check();
   }, 60000);
 }).on('friendship', async friendship => {
