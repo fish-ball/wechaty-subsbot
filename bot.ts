@@ -1,6 +1,6 @@
 import {Contact, Friendship, UrlLink, Wechaty} from 'wechaty';
 import {MessageType, ScanStatus} from 'wechaty-puppet';
-import {PuppetPadplus} from 'wechaty-puppet-padplus';
+// import {PuppetPadplus} from 'wechaty-puppet-padplus';
 import QrcodeTerminal from 'qrcode-terminal';
 import fs from 'fs';
 import path from 'path';
@@ -9,13 +9,20 @@ import config from './config';
 
 const token = config.token;
 
-const puppet = new PuppetPadplus({
-  token,
-});
+// const puppet = new puppetpadplus({
+//   token,
+// });
+
+// const bot = new Wechaty({
+//   puppet,
+//   name: config.name, // generate xxxx.memory-card.json and save login data for the next login
+// });
 
 const bot = new Wechaty({
-  puppet,
-  name: config.name, // generate xxxx.memory-card.json and save login data for the next login
+  puppet: 'wechaty-puppet-hostie',
+  puppetOptions: {
+    token,
+  }
 });
 
 bot.on('scan', (qrcode, status) => {
