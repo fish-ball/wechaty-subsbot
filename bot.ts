@@ -8,6 +8,7 @@ import fetch from 'node-fetch';
 import config from './config';
 
 const token = config.token;
+console.log(token);
 
 // const puppet = new puppetpadplus({
 //   token,
@@ -24,6 +25,8 @@ const bot = new Wechaty({
     token,
   }
 });
+
+console.log('bot created');
 
 bot.on('scan', (qrcode, status) => {
   if (status === ScanStatus.Waiting) {
