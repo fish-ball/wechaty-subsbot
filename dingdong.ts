@@ -1,15 +1,30 @@
 import {Contact, Friendship, UrlLink, Wechaty} from 'wechaty';
 import {MessageType, ScanStatus} from 'wechaty-puppet';
+// import {PuppetPadplus} from 'wechaty-puppet-padplus';
 import QrcodeTerminal from 'qrcode-terminal';
 import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 import config from './config';
 
+const token = config.tokenDonut;
+console.log(token);
+
+// const puppet = new puppetpadplus({
+//   token,
+// });
+
+// const bot = new Wechaty({
+//   puppet,
+//   name: config.name, // generate xxxx.memory-card.json and save login data for the next login
+// });
+
 const bot = new Wechaty({
-  name: config.name,
-  puppet: 'wechaty-puppet-padplus',
-  puppetOptions: {token: config.token},
+  // puppet: 'wechaty-puppet-padplus',
+  puppet: 'wechaty-puppet-hostie',
+  puppetOptions: {
+    token,
+  },
 });
 
 console.log('bot created');
@@ -25,10 +40,9 @@ bot.on('scan', (qrcode, status) => {
   const text = msg.text();
   const sender = msg.from();
   if (!sender) return;
-  const room = msg.room();
 
-  console.log((room || sender)?.id);
-  const ctx = new UserContext((room || sender)?.id);
+  const ctx = new UserContext(sender.id);
+  ctx.data.subscriptions = ctx.data.subscriptions || {};
 
   // 查询指令
   if (/^:list$/.test(msg.text())) {
@@ -42,12 +56,15 @@ bot.on('scan', (qrcode, status) => {
     return;
   }
 
-  // // console.log(msg.from());
-  // // 只关注单聊收到的信息
-  // if (msg.room()) {
-  //   console.log(msg);
-  //   return;
-  // }
+  // console.log(msg.from());
+  // 只关注单聊收到的信息
+  if (msg.room()) {
+    console.log(msg);
+    if (msg.text() === '#ding') {
+      await msg.room()?.say('dong');
+    }
+    return;
+  }
 
   const match = /https:\/\/space\.bilibili\.com\/(\d+)/.exec(text);
   if (!match) return;
@@ -62,16 +79,9 @@ bot.on('scan', (qrcode, status) => {
   const url = `https://api.bilibili.com/x/space/acc/info?mid=${channelId}&jsonp=jsonp`;
   const resp = await fetch(url);
   const channelInfo = JSON.parse(await resp.text());
-  if (!channelInfo.data) {
-    console.log(url);
-    console.log(channelInfo);
-    return;
-  }
-  console.log('>>>', channelInfo);
-
   channel.name = channelInfo.data.name;
 
-  await (room || sender)?.say(`你已成功订阅《${channel.name}》
+  await sender!.say(`你已成功订阅《${channel.name}》
 :list - 查看当前订阅
 :leave <id> - 退订指定频道`);
 
@@ -81,7 +91,7 @@ bot.on('scan', (qrcode, status) => {
   // 每分钟查一下有没有新片发布
   setInterval(async () => {
     await SubscriptionRunner.check();
-  }, 50000);
+  }, 60000);
 }).on('friendship', async friendship => {
   if (friendship.type() === Friendship.Type.Receive) {
     await friendship.accept();
@@ -90,33 +100,27 @@ bot.on('scan', (qrcode, status) => {
 }).start();
 
 class UserContext {
-  channelId: string;
+  userId: string;
   fname: string;
   data: any = {};
 
-  constructor(channelId: string) {
-    this.channelId = channelId;
-    this.fname = `data/${channelId}.subs`;
+  constructor(userId: string) {
+    this.channelId = userId;
+    this.fname = `data/${userId}.subs`;
     fs.mkdirSync(path.dirname(this.fname), {recursive: true, mode: 0o644});
     try {
       const content = fs.readFileSync(this.fname);
-      this.data = JSON.parse(content && content.toString() || '{}') || {};
+      this.data = JSON.parse(content && content.toString() || '{}');
       console.log(this.data);
     } catch (err) {
       if (err.code !== 'ENOENT') {
         throw err;
       }
     }
-    this.data = this.data || {};
-    this.data.subscriptions = this.data.subscriptions || {};
   }
 
-  async channel() {
-    if (/@chatroom$/.test(this.channelId)) {
-      return bot.Room.find({id: this.channelId});
-    } else {
-      return bot.Contact.find({id: this.channelId});
-    }
+  async user() {
+    return bot.Contact.find({id: this.userId});
   }
 
   async save() {
@@ -129,21 +133,21 @@ class UserContext {
     const content = Object.entries(this.data.subscriptions || {}).map(([channelId, channelInfo]) => {
       return `${channelId} - ${(channelInfo as any).name}`;
     }).join('\n');
-    (await this.channel())?.say(content);
+    (await this.user())?.say(content);
   }
 
   async leaveChannel(channelId: string) {
     // console.log(this.data.subscriptions);
     const channel = this.data.subscriptions && this.data.subscriptions[channelId];
     if (!channel) {
-      (await this.channel())?.say('您没有订阅这个频道，请检查 ID 是否输入正确');
+      (await this.user())?.say('您没有订阅这个频道，请检查 ID 是否输入正确');
     }
     delete this.data.subscriptions[channelId];
     await this.save();
-    (await this.channel())?.say(`您已成功退订《${channel.name}》`);
+    (await this.user())?.say(`您已成功退订《${channel.name}》`);
   }
 
-  static getChannelIdList() {
+  static getUserIdList() {
     try {
       const files = fs.readdirSync('data');
       return files.filter(f => /\.subs$/.test(f))
@@ -161,22 +165,23 @@ class UserContext {
 // 定时获取订阅的 UP 主的视频，如果发现更新则推送
 class SubscriptionRunner {
   static check() {
-    UserContext.getChannelIdList().forEach(async channelId => {
-      console.log(channelId);
-      const ctx = new UserContext(channelId);
-      const contact = await ctx.channel();
+    UserContext.getUserIdList().forEach(async userId => {
+      console.log(userId);
+      const ctx = new UserContext(userId);
+      const contact = await ctx.user();
       if (!contact) return;
+      // 要检测是否加了好友
+      if (!contact.friend()) {
+        // 不是好友申请加好友
+        // await Friendship.add(contact, '我是订阅机器人');
+        return;
+      }
       // console.log(ctx.data);
       await Promise.all(Object.entries(ctx.data.subscriptions || {}).map(async ([channelId, channelInfo]) => {
         const url = `https://api.bilibili.com/x/space/arc/search?mid=${channelId}&ps=30&tid=0&pn=1&keyword=&order=pubdate&jsonp=jsonp`;
         const resp = await fetch(url);
         const data = JSON.parse(await resp.text());
-        if (!data.data) {
-          console.log(url);
-          console.log(data);
-          return;
-        }
-        // console.log(data);
+        if (!(data && data.data && data.data.list)) return;
         await Promise.all(data.data.list.vlist.map(async (video: any) => {
           if (video.created > (channelInfo as any).lastTimestamp || 0) {
             const linkPayload = new UrlLink({
