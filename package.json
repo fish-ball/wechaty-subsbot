@@ -11,7 +11,7 @@
   "dependencies": {
     "firebase": "7.14.2",
     "grpc": "^1.24.2",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "node-pre-gyp": "^0.14.0",
     "qrcode-terminal": "^0.12.0",
     "request": "^2.88.2",
